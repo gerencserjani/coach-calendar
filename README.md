@@ -465,8 +465,12 @@ re-run it. The very last thing it prompts for is running
 ### Redeploying
 
 ```
-gcloud run deploy betti-coaching-calendar --source . --region europe-west1 --project <project-id>
+gcloud run deploy <service-name> --source . --region <region> --project <project-id>
 ```
+
+(`<service-name>`/`<region>`/`<project-id>` -- whatever `scripts/setup-production.sh`
+named your own Cloud Run service/region/project when you first ran it; not
+published here on purpose, same reasoning as the other placeholders above.)
 
 The container no longer runs `prisma migrate deploy` on boot (that was
 adding ~7-8s to _every_ cold start, not just deploys, for a check that's a
