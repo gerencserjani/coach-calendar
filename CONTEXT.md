@@ -77,6 +77,7 @@ erDiagram
 | Guest/client user accounts for booking (future idea)                                    | 💭 Idea     | #16   |
 | Coach id on queued notification jobs, for log observability                             | ✅ Done     | #17   |
 | Invite-based coach onboarding (no global `FRONTEND_URL`, no pre-created account)        | ✅ Done     | #32   |
+| Self-serve `emailBrandPalette` UI in admin Settings (future idea)                       | 💭 Idea     | #52   |
 
 **Current real-world state:** the one existing coach hasn't verified a Resend domain yet (`Settings.emailFrom` is null), so it's still sending through the Gmail fallback -- this is expected, not a bug. Once a domain is verified at resend.com and `Settings.emailFrom` is set, email switches over automatically.
 
