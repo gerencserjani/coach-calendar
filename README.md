@@ -240,33 +240,38 @@ Instead:
 measure (`StripPasswordHashInterceptor`, registered globally in `main.ts`),
 so it can never leak even from an endpoint that includes a `coach` relation.
 
-## One-time Google Calendar setup (mints fresh Meet links)
+## Google Calendar setup (mints fresh Meet links)
 
 Every booking with location `GOOGLE_MEET` gets a **brand-new** Meet room, so a
-previous client can never re-enter or linger in an old one. This uses a
-single, centrally-connected Google account (yours in dev, the business
-account in production) rather than a per-coach connection — see the ADR-style
-reasoning in the conversation history if you need the "why".
+previous client can never re-enter or linger in an old one. This is a
+**per-coach connection**: each coach connects her own Google account once,
+from her own admin dashboard, and every Meet link for her bookings from then
+on is minted in that account (`GoogleIntegration`, keyed by `coachId` — see
+`GoogleController`/`GoogleOAuthService`). Only the one-time Cloud Console
+setup below is shared platform infrastructure (`GOOGLE_CLIENT_ID`/
+`GOOGLE_CLIENT_SECRET`) — the same way one "Sign in with Google" OAuth app
+serves many separate end users' own accounts; it's not one shared connected
+account across every coach.
 
 1. In Google Cloud Console, create an OAuth 2.0 Client ID (Web application)
    with the Calendar scope, and set its redirect URI to
-   `GOOGLE_OAUTH_REDIRECT_URI`.
+   `GOOGLE_OAUTH_REDIRECT_URI`. Done once for the whole platform.
 2. Set the OAuth consent screen's publishing status to **"In production"**
-   (not "Testing") — otherwise Google expires the refresh token after 7 days.
-   Verification isn't required for a single internal account.
-3. Visit `GET /admin/google/connect` directly in a browser (it 302s to
-   Google's consent screen — not gated behind a login, since a plain browser
-   navigation can't carry an `Authorization` header anyway; see the comment
-   in `google.controller.ts`). You'll see an "unverified app" warning since
-   the app isn't submitted for Google review — click "Advanced → Go to (app
-   name) (unsafe)" to proceed; this is safe since you're authorizing your own
-   app. Sign in with whichever Google account should mint the Meet links.
-4. Google redirects back to `/admin/google/callback`, which stores the
-   encrypted refresh token. `GET /admin/google/status` confirms the
-   connection.
-5. To switch accounts later (e.g. dev → production), just repeat step 3
-   signed into a different Google account (or an incognito window) — it
-   overwrites the stored token.
+   (not "Testing") — otherwise Google expires every coach's refresh token
+   after 7 days. Verification isn't required for this use case.
+3. Each coach connects her own account from her own admin dashboard: log in,
+   open "Google Naptár kapcsolat" (`GoogleStatusPage`), and click
+   "Összekapcsolás" (or "Fiók váltása" to reconnect). You'll see an
+   "unverified app" warning since the app isn't submitted for Google review —
+   click "Advanced → Go to (app name) (unsafe)" to proceed; this is safe
+   since you're authorizing your own app. Sign in with whichever Google
+   account should mint that coach's Meet links.
+4. That same admin page (`GET /admin/google/status` underneath) confirms the
+   connection for that coach.
+5. To switch a coach's connected account later (e.g. dev → production, or
+   she wants a different Google account), that coach just repeats step 3
+   signed into a different Google account — it overwrites only her own
+   stored token, never another coach's.
 
 ## Scripts
 
