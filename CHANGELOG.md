@@ -1,3 +1,9 @@
+# [1.25.0](https://github.com/gerencserjani/coach-calendar/compare/v1.24.0...v1.25.0) (2026-10-26)
+
+### Features
+
+- add a real "Join Google Meet" button to booking emails ([2ad79f4](https://github.com/gerencserjani/coach-calendar/commit/2ad79f41cddaccdc47ac987c54f7fa83ff3ce30a))
+
 # [1.24.0](https://github.com/gerencserjani/coach-calendar/compare/v1.23.0...v1.24.0) (2026-10-21)
 
 ### Features
