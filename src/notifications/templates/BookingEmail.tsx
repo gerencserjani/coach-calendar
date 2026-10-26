@@ -193,7 +193,11 @@ export function BookingEmail({
             {(primaryButton || secondaryButton) && (
               <Section style={styles.buttonSection}>
                 {primaryButton && (
-                  <Button href={primaryButton.url} style={styles.buttonPrimary}>
+                  <Button
+                    href={primaryButton.url}
+                    style={styles.buttonPrimary}
+                    className="bcc-button-primary"
+                  >
                     {primaryButton.label}
                   </Button>
                 )}
@@ -272,6 +276,7 @@ function buildFontAndDarkModeCss(palette: EmailBrandPalette): string {
     .bcc-footer { color: ${dark.inkSoft} !important; }
     .bcc-manage-links { color: ${dark.inkSoft} !important; }
     .bcc-button-secondary { background-color: ${dark.bgCard} !important; color: ${dark.ink} !important; border-color: ${dark.line} !important; }
+    .bcc-button-primary { background-color: ${dark.accent} !important; color: #ffffff !important; }
   }
 `;
 }

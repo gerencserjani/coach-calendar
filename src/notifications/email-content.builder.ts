@@ -155,6 +155,14 @@ export class EmailContentBuilder {
       label: t('email.common.buttonAddToGoogleCalendar'),
       url: ctx.googleCalendarUrl,
     };
+    // Only for GOOGLE_MEET bookings -- the details card's own location row
+    // used to embed the raw link as plain text (no guarantee any given
+    // email client auto-linkifies that), this is the actual clickable way
+    // in.
+    const meetButton =
+      ctx.location === LocationType.GOOGLE_MEET && ctx.meetLink
+        ? { label: t('email.common.buttonJoinGoogleMeet'), url: ctx.meetLink }
+        : undefined;
     const calendarNote =
       kind === 'bookingRescheduled'
         ? t('email.common.calendarUpdateHint')
@@ -174,6 +182,7 @@ export class EmailContentBuilder {
           detailsHeading: t('email.common.detailsHeading'),
           details,
           helperText: t(`email.${kind}.client.manageHint`),
+          primaryButton: meetButton,
           secondaryButton: calendarButton,
           calendarNote,
           manageLinks: this.buildManageLinks(ctx, t),
@@ -194,6 +203,7 @@ export class EmailContentBuilder {
         intro: t(`email.${kind}.coach.intro`, vars),
         detailsHeading: t('email.common.detailsHeading'),
         details,
+        primaryButton: meetButton,
         secondaryButton: calendarButton,
         calendarNote,
         footer: t('email.common.footer'),
@@ -266,9 +276,7 @@ export class EmailContentBuilder {
           address: ctx.businessAddress,
         });
       case LocationType.GOOGLE_MEET:
-        return t('email.common.locationGoogleMeet', {
-          link: ctx.meetLink ?? '',
-        });
+        return t('email.common.locationGoogleMeet');
       case LocationType.PHONE:
         return t('email.common.locationPhone', { phone: ctx.clientPhone });
     }
