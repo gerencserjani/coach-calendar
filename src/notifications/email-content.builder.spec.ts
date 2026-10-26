@@ -112,7 +112,7 @@ describe('EmailContentBuilder', () => {
       expect(locationDetail?.value).toContain('Budapest, Teszt utca 1.');
     });
 
-    it('includes the Meet link for a GOOGLE_MEET booking', () => {
+    it('adds a "Join Google Meet" primary button for a GOOGLE_MEET booking', () => {
       const { props } = builder.buildConfirmed(
         baseContext({
           location: LocationType.GOOGLE_MEET,
@@ -121,10 +121,21 @@ describe('EmailContentBuilder', () => {
         'client',
         'hu',
       );
+      expect(props.primaryButton).toEqual({
+        label: 'Csatlakozás a Google Meethez',
+        url: 'https://meet.google.com/abc-defg-hij',
+      });
       const locationDetail = props.details.find((d) => d.label === 'Helyszín');
-      expect(locationDetail?.value).toContain(
-        'https://meet.google.com/abc-defg-hij',
+      expect(locationDetail?.value).toBe('Google Meet');
+    });
+
+    it('omits the primary button for a non-GOOGLE_MEET booking', () => {
+      const { props } = builder.buildConfirmed(
+        baseContext({ location: LocationType.PHONE }),
+        'client',
+        'hu',
       );
+      expect(props.primaryButton).toBeUndefined();
     });
   });
 
