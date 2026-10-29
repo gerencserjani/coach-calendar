@@ -184,6 +184,30 @@ describe('CoachesService (integration)', () => {
       const all = await service.findAll();
       expect(all.map((c) => c.name)).toEqual(['Anna', 'Zoltán']);
     });
+
+    it('reports googleCalendarConnected per coach, based on whether a GoogleIntegration row exists', async () => {
+      const connected = await createTestCoach({ name: 'Connected Coach' });
+      const notConnected = await createTestCoach({ name: 'Not Connected' });
+      await testPrisma.googleIntegration.create({
+        data: {
+          coachId: connected.id,
+          refreshTokenEncrypted: 'encrypted-token',
+          connectedEmail: 'connected@example.com',
+        },
+      });
+
+      const all = await service.findAll();
+
+      const connectedResult = all.find((c) => c.id === connected.id);
+      expect(connectedResult?.googleCalendarConnected).toBe(true);
+      expect(connectedResult?.googleCalendarConnectedEmail).toBe(
+        'connected@example.com',
+      );
+
+      const notConnectedResult = all.find((c) => c.id === notConnected.id);
+      expect(notConnectedResult?.googleCalendarConnected).toBe(false);
+      expect(notConnectedResult?.googleCalendarConnectedEmail).toBeNull();
+    });
   });
 
   describe('update', () => {

@@ -6,6 +6,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { CoachRole, type Coach } from '@prisma/client';
+
+export type CoachListItem = Coach & {
+  googleCalendarConnected: boolean;
+  googleCalendarConnectedEmail: string | null;
+};
 import { PasswordService } from '../auth/password.service.js';
 import { TokenService } from '../auth/token.service.js';
 import { CoachInviteEmailService } from './coach-invite-email.service.js';
@@ -26,9 +31,25 @@ export class CoachesService {
     private readonly coachInviteEmailService: CoachInviteEmailService,
   ) {}
 
-  /** ADMIN-only (see RolesGuard on the controller): every coach/business on the platform. */
-  findAll(): Promise<Coach[]> {
-    return this.prisma.coach.findMany({ orderBy: { name: 'asc' } });
+  /**
+   * ADMIN-only (see RolesGuard on the controller): every coach/business on
+   * the platform, plus her Google Calendar connection status -- lets the
+   * platform admin see this across every coach at a glance (coach-admin's
+   * CoachList), without logging into each coach's own dashboard to check
+   * GoogleStatusPage individually. A single `include` here is the same
+   * "does a GoogleIntegration row exist" check GoogleOAuthService.status()
+   * does per coach, just batched into one query instead of N.
+   */
+  async findAll(): Promise<CoachListItem[]> {
+    const coaches = await this.prisma.coach.findMany({
+      orderBy: { name: 'asc' },
+      include: { googleIntegration: true },
+    });
+    return coaches.map(({ googleIntegration, ...coach }) => ({
+      ...coach,
+      googleCalendarConnected: googleIntegration !== null,
+      googleCalendarConnectedEmail: googleIntegration?.connectedEmail ?? null,
+    }));
   }
 
   update(coachId: string, dto: UpdateCoachDto): Promise<Coach> {
