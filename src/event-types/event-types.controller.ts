@@ -9,13 +9,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentCoach } from '../auth/current-coach.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { Coach } from '@prisma/client';
 import { OptionalCoachIdQueryDto } from '../common/dto/optional-coach-id-query.dto.js';
 import { resolveCoachScope } from '../common/ownership.util.js';
 import { CreateEventTypeDto } from './dto/create-event-type.dto.js';
+import { EventTypeResponseDto } from './dto/event-type-response.dto.js';
 import { QueryEventTypesDto } from './dto/query-event-types.dto.js';
 import { ReorderEventTypesDto } from './dto/reorder-event-types.dto.js';
 import { UpdateEventTypeDto } from './dto/update-event-type.dto.js';
@@ -28,6 +29,7 @@ export class EventTypesController {
 
   // Public: the client-facing booking catalog, for the coach named by
   // ?coachId= (see QueryEventTypesDto).
+  @ApiOkResponse({ type: EventTypeResponseDto, isArray: true })
   @Get()
   findActive(@Query() query: QueryEventTypesDto) {
     return this.eventTypesService.findActive(query.coachId);
