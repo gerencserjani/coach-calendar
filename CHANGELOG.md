@@ -1,3 +1,9 @@
+# [1.27.0](https://github.com/gerencserjani/coach-calendar/compare/v1.26.0...v1.27.0) (2026-10-29)
+
+### Features
+
+- **coaches:** include Google Calendar connection status in admin list ([e70e125](https://github.com/gerencserjani/coach-calendar/commit/e70e125f98ce946190145125b479e1080cb75ea9)), closes [#8](https://github.com/gerencserjani/coach-calendar/issues/8)
+
 # [1.26.0](https://github.com/gerencserjani/coach-calendar/compare/v1.25.0...v1.26.0) (2026-10-29)
 
 ### Features
