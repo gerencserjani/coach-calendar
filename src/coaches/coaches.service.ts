@@ -7,6 +7,13 @@ import {
 } from '@nestjs/common';
 import { CoachRole, type Coach } from '@prisma/client';
 
+export interface PendingInvite {
+  email: string;
+  name: string;
+  frontendUrl: string;
+  sentAt: Date;
+}
+
 export type CoachListItem = Coach & {
   googleCalendarConnected: boolean;
   googleCalendarConnectedEmail: string | null;
@@ -82,8 +89,10 @@ export class CoachesService {
    * belongs to another coach (one coach per site -- see Coach.frontendUrl),
    * or if `email` already belongs to a coach. Calling this again for the
    * same email+site before it's accepted (e.g. the first email got lost)
-   * just mints and sends a fresh link -- nothing is persisted here, so
-   * there's nothing to collide with or clean up.
+   * just mints and sends a fresh link -- no Coach row is persisted, so
+   * there's nothing to collide with or clean up. A CoachInviteLog row is
+   * written after the email sends, purely informational (see #63) -- a
+   * resend adds another row rather than updating the first.
    */
   async invite(dto: InviteCoachDto): Promise<void> {
     const existingCoach = await this.prisma.coach.findUnique({
@@ -115,7 +124,47 @@ export class CoachesService {
       dto.frontendUrl,
       token,
     );
+    await this.prisma.coachInviteLog.create({
+      data: {
+        email: dto.email,
+        name: dto.name,
+        frontendUrl: dto.frontendUrl,
+      },
+    });
     this.logger.log(`Invite sent to ${dto.email} for ${dto.frontendUrl}`);
+  }
+
+  /**
+   * ADMIN-only: every sent invite that hasn't been accepted yet (no Coach
+   * row exists for that email), most-recently-sent first. Resending the
+   * same invite collapses to its latest sentAt rather than listing
+   * duplicate rows for one still-pending invite.
+   */
+  async findPendingInvites(): Promise<PendingInvite[]> {
+    const logs = await this.prisma.coachInviteLog.findMany({
+      orderBy: { sentAt: 'desc' },
+    });
+    const latestByEmail = new Map<string, (typeof logs)[number]>();
+    for (const log of logs) {
+      if (!latestByEmail.has(log.email)) {
+        latestByEmail.set(log.email, log);
+      }
+    }
+
+    const acceptedCoaches = await this.prisma.coach.findMany({
+      where: { email: { in: [...latestByEmail.keys()] } },
+      select: { email: true },
+    });
+    const acceptedEmails = new Set(acceptedCoaches.map((c) => c.email));
+
+    return [...latestByEmail.values()]
+      .filter((log) => !acceptedEmails.has(log.email))
+      .map(({ email, name, frontendUrl, sentAt }) => ({
+        email,
+        name,
+        frontendUrl,
+        sentAt,
+      }));
   }
 
   /**
