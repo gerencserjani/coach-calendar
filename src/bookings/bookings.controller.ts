@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentCoach } from '../auth/current-coach.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -21,6 +21,7 @@ import {
   ClientCancelBookingDto,
   CoachCancelBookingDto,
 } from './dto/cancel-booking.dto.js';
+import { BookingResponseDto } from './dto/booking-response.dto.js';
 import { CreateBookingDto } from './dto/create-booking.dto.js';
 import { RescheduleBookingDto } from './dto/reschedule-booking.dto.js';
 
@@ -42,6 +43,7 @@ export class BookingsController {
   // Public: the client-facing booking form. Tighter than the app default --
   // each request sends emails and can create a Google Calendar event, so
   // it's a more expensive/abusable action than a plain read.
+  @ApiCreatedResponse({ type: BookingResponseDto })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post()
   create(

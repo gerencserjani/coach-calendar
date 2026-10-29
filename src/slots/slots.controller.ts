@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { QuerySlotsDto } from './dto/query-slots.dto.js';
+import { SlotResponseDto } from './dto/slot-response.dto.js';
 import { SlotsService } from './slots.service.js';
 
 @ApiTags('slots')
@@ -8,6 +9,7 @@ import { SlotsService } from './slots.service.js';
 export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}
 
+  @ApiOkResponse({ type: SlotResponseDto, isArray: true })
   @Get()
   find(@Query() query: QuerySlotsDto) {
     return this.slotsService.computeSlots(query);

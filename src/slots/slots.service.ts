@@ -10,12 +10,7 @@ import { I18nService } from '../i18n/i18n.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import type { QuerySlotsDto } from './dto/query-slots.dto.js';
-
-export interface Slot {
-  coachId: string;
-  startAt: string;
-  endAt: string;
-}
+import { SlotResponseDto } from './dto/slot-response.dto.js';
 
 const MAX_RANGE_DAYS = 90;
 
@@ -28,7 +23,7 @@ export class SlotsService {
     private readonly i18n: I18nService,
   ) {}
 
-  async computeSlots(query: QuerySlotsDto): Promise<Slot[]> {
+  async computeSlots(query: QuerySlotsDto): Promise<SlotResponseDto[]> {
     const eventType = await this.prisma.eventType.findUnique({
       where: { id: query.eventTypeId },
     });
@@ -85,7 +80,7 @@ export class SlotsService {
         timezone,
       );
 
-    const slots: Slot[] = [];
+    const slots: SlotResponseDto[] = [];
     for (let day = from; day <= to; day = day.plus({ days: 1 })) {
       const isoDate = day.toISODate()!;
       const ranges = rangesByDate.get(isoDate) ?? [];
