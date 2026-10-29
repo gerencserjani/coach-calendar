@@ -1,3 +1,9 @@
+# [1.29.0](https://github.com/gerencserjani/coach-calendar/compare/v1.28.0...v1.29.0) (2026-10-29)
+
+### Features
+
+- **coaches:** add CoachInviteLog and a pending-invites admin endpoint ([220f82b](https://github.com/gerencserjani/coach-calendar/commit/220f82b708cae5bade956c44a3b439590e610291)), closes [#63](https://github.com/gerencserjani/coach-calendar/issues/63)
+
 # [1.28.0](https://github.com/gerencserjani/coach-calendar/compare/v1.27.0...v1.28.0) (2026-10-29)
 
 ### Features
