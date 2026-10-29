@@ -1,3 +1,9 @@
+# [1.26.0](https://github.com/gerencserjani/coach-calendar/compare/v1.25.0...v1.26.0) (2026-10-29)
+
+### Features
+
+- **api:** add real response DTOs for the 4 highest-traffic endpoints ([ef32389](https://github.com/gerencserjani/coach-calendar/commit/ef32389eadb11c778c29df62c7550070ad16b987)), closes [#54](https://github.com/gerencserjani/coach-calendar/issues/54)
+
 # [1.25.0](https://github.com/gerencserjani/coach-calendar/compare/v1.24.0...v1.25.0) (2026-10-26)
 
 ### Features
