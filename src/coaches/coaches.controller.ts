@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,10 +16,12 @@ import { CurrentCoach } from '../auth/current-coach.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { RolesGuard } from '../auth/roles.guard.js';
+import { resolveCoachScope } from '../common/ownership.util.js';
 import { CoachesService } from './coaches.service.js';
 import { AcceptInviteDto } from './dto/accept-invite.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { InviteCoachDto } from './dto/invite-coach.dto.js';
+import { QueryCoachStatsDto } from './dto/query-coach-stats.dto.js';
 import { SetFrontendUrlDto } from './dto/set-frontend-url.dto.js';
 import { UpdateCoachDto } from './dto/update-coach.dto.js';
 
@@ -55,6 +58,21 @@ export class CoachesController {
   @UseGuards(JwtAuthGuard)
   updateMe(@CurrentCoach() coach: Coach, @Body() dto: UpdateCoachDto) {
     return this.coachesService.update(coach.id, dto);
+  }
+
+  // Not ADMIN-only: every coach sees her own booking volume + revenue
+  // estimate from her own dashboard. An ADMIN may pass ?coachId= to view
+  // a specific coach's figures instead (resolveCoachScope) -- a COACH
+  // naming another coach's id is rejected, same as every other
+  // "me"-scoped endpoint that accepts this override.
+  @ApiBearerAuth()
+  @Get('me/stats')
+  @UseGuards(JwtAuthGuard)
+  getStats(@CurrentCoach() coach: Coach, @Query() query: QueryCoachStatsDto) {
+    return this.coachesService.getStats(
+      resolveCoachScope(coach, query.coachId),
+      query.range,
+    );
   }
 
   @ApiBearerAuth()
