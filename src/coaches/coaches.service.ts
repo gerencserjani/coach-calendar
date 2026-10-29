@@ -10,6 +10,9 @@ import { CoachRole, type Coach } from '@prisma/client';
 export type CoachListItem = Coach & {
   googleCalendarConnected: boolean;
   googleCalendarConnectedEmail: string | null;
+  /** True once this coach has verified her own Resend domain -- see Settings.emailFrom. False means she's still on the shared Gmail fallback sender. */
+  usesOwnEmailDomain: boolean;
+  emailFrom: string | null;
 };
 import { PasswordService } from '../auth/password.service.js';
 import { TokenService } from '../auth/token.service.js';
@@ -33,22 +36,27 @@ export class CoachesService {
 
   /**
    * ADMIN-only (see RolesGuard on the controller): every coach/business on
-   * the platform, plus her Google Calendar connection status -- lets the
-   * platform admin see this across every coach at a glance (coach-admin's
-   * CoachList), without logging into each coach's own dashboard to check
-   * GoogleStatusPage individually. A single `include` here is the same
-   * "does a GoogleIntegration row exist" check GoogleOAuthService.status()
-   * does per coach, just batched into one query instead of N.
+   * the platform, plus her Google Calendar connection status and
+   * email-sending mode -- lets the platform admin see both across every
+   * coach at a glance (coach-admin's CoachList), without logging into each
+   * coach's own dashboard individually. The Google half is the same "does a
+   * GoogleIntegration row exist" check GoogleOAuthService.status() does per
+   * coach, just batched into one query instead of N. A coach with no
+   * Settings row yet (never loaded her own dashboard) has no emailFrom
+   * either way, so she correctly shows as still on the shared Gmail
+   * fallback -- same semantics EmailService falls back on.
    */
   async findAll(): Promise<CoachListItem[]> {
     const coaches = await this.prisma.coach.findMany({
       orderBy: { name: 'asc' },
-      include: { googleIntegration: true },
+      include: { googleIntegration: true, settings: true },
     });
-    return coaches.map(({ googleIntegration, ...coach }) => ({
+    return coaches.map(({ googleIntegration, settings, ...coach }) => ({
       ...coach,
       googleCalendarConnected: googleIntegration !== null,
       googleCalendarConnectedEmail: googleIntegration?.connectedEmail ?? null,
+      usesOwnEmailDomain: settings?.emailFrom != null,
+      emailFrom: settings?.emailFrom ?? null,
     }));
   }
 

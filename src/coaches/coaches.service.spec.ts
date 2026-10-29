@@ -208,6 +208,39 @@ describe('CoachesService (integration)', () => {
       expect(notConnectedResult?.googleCalendarConnected).toBe(false);
       expect(notConnectedResult?.googleCalendarConnectedEmail).toBeNull();
     });
+
+    it('reports usesOwnEmailDomain per coach, based on Settings.emailFrom', async () => {
+      const ownDomain = await createTestCoach({ name: 'Own Domain Coach' });
+      const noSettingsYet = await createTestCoach({ name: 'No Settings Yet' });
+      const settingsNoEmailFrom = await createTestCoach({
+        name: 'Settings No Email From',
+      });
+      await testPrisma.settings.create({
+        data: {
+          coachId: ownDomain.id,
+          emailFrom: 'Coach <coach@own-domain.hu>',
+        },
+      });
+      await testPrisma.settings.create({
+        data: { coachId: settingsNoEmailFrom.id },
+      });
+
+      const all = await service.findAll();
+
+      const ownDomainResult = all.find((c) => c.id === ownDomain.id);
+      expect(ownDomainResult?.usesOwnEmailDomain).toBe(true);
+      expect(ownDomainResult?.emailFrom).toBe('Coach <coach@own-domain.hu>');
+
+      const noSettingsResult = all.find((c) => c.id === noSettingsYet.id);
+      expect(noSettingsResult?.usesOwnEmailDomain).toBe(false);
+      expect(noSettingsResult?.emailFrom).toBeNull();
+
+      const noEmailFromResult = all.find(
+        (c) => c.id === settingsNoEmailFrom.id,
+      );
+      expect(noEmailFromResult?.usesOwnEmailDomain).toBe(false);
+      expect(noEmailFromResult?.emailFrom).toBeNull();
+    });
   });
 
   describe('update', () => {
