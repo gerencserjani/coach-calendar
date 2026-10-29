@@ -1,3 +1,9 @@
+# [1.30.0](https://github.com/gerencserjani/coach-calendar/compare/v1.29.0...v1.30.0) (2026-10-29)
+
+### Features
+
+- **coaches:** add a booking volume + revenue stats endpoint ([4bdff6c](https://github.com/gerencserjani/coach-calendar/commit/4bdff6cd13eead0756901e73bcddb96719fe6b88)), closes [#55](https://github.com/gerencserjani/coach-calendar/issues/55)
+
 # [1.29.0](https://github.com/gerencserjani/coach-calendar/compare/v1.28.0...v1.29.0) (2026-10-29)
 
 ### Features
