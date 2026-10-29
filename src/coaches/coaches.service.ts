@@ -5,7 +5,17 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CoachRole, type Coach } from '@prisma/client';
+import { BookingStatus, CoachRole, type Coach } from '@prisma/client';
+import { DateTime } from 'luxon';
+import { PasswordService } from '../auth/password.service.js';
+import { TokenService } from '../auth/token.service.js';
+import { CoachInviteEmailService } from './coach-invite-email.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import type { AcceptInviteDto } from './dto/accept-invite.dto.js';
+import type { ChangePasswordDto } from './dto/change-password.dto.js';
+import type { InviteCoachDto } from './dto/invite-coach.dto.js';
+import type { StatsRange } from './dto/query-coach-stats.dto.js';
+import type { UpdateCoachDto } from './dto/update-coach.dto.js';
 
 export interface PendingInvite {
   email: string;
@@ -21,14 +31,12 @@ export type CoachListItem = Coach & {
   usesOwnEmailDomain: boolean;
   emailFrom: string | null;
 };
-import { PasswordService } from '../auth/password.service.js';
-import { TokenService } from '../auth/token.service.js';
-import { CoachInviteEmailService } from './coach-invite-email.service.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import type { AcceptInviteDto } from './dto/accept-invite.dto.js';
-import type { ChangePasswordDto } from './dto/change-password.dto.js';
-import type { InviteCoachDto } from './dto/invite-coach.dto.js';
-import type { UpdateCoachDto } from './dto/update-coach.dto.js';
+
+export interface CoachStats {
+  range: StatsRange;
+  bookingCount: number;
+  revenueHuf: number;
+}
 
 @Injectable()
 export class CoachesService {
@@ -270,5 +278,41 @@ export class CoachesService {
       data: { passwordHash },
     });
     this.logger.log(`Password changed for coach ${coach.id}`);
+  }
+
+  /**
+   * Booking volume + an estimated revenue figure for one coach's own
+   * confirmed bookings, over a rolling window (or 'all' time). Cancelled
+   * bookings don't count toward either figure. Revenue sums each booking's
+   * EventType.price at query time (not a price snapshotted on the booking
+   * itself) -- null-priced event types are excluded from the sum entirely,
+   * same as how they're not counted as 0 in the public pricing table.
+   */
+  async getStats(
+    coachId: string,
+    range: StatsRange = '30d',
+  ): Promise<CoachStats> {
+    const startAt =
+      range === 'all'
+        ? undefined
+        : DateTime.now()
+            .minus({ days: { '7d': 7, '30d': 30, '90d': 90 }[range] })
+            .toJSDate();
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        coachId,
+        status: BookingStatus.CONFIRMED,
+        ...(startAt ? { startAt: { gte: startAt } } : {}),
+      },
+      select: { eventType: { select: { price: true } } },
+    });
+
+    const revenueHuf = bookings.reduce(
+      (sum, booking) => sum + (booking.eventType.price ?? 0),
+      0,
+    );
+
+    return { range, bookingCount: bookings.length, revenueHuf };
   }
 }

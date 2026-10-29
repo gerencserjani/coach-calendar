@@ -5,11 +5,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { CoachRole } from '@prisma/client';
+import { BookingStatus, CoachRole, LocationType } from '@prisma/client';
 import { PasswordService } from '../auth/password.service.js';
 import { TokenService } from '../auth/token.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
-import { createTestAllowedOrigin, createTestCoach } from '../test/factories.js';
+import {
+  createTestAllowedOrigin,
+  createTestCoach,
+  createTestEventType,
+} from '../test/factories.js';
 import {
   disconnectTestPrisma,
   resetDatabase,
@@ -406,6 +410,104 @@ describe('CoachesService (integration)', () => {
         where: { id: coach.id },
       });
       expect(unchanged.passwordHash).toBe(coach.passwordHash);
+    });
+  });
+
+  describe('getStats', () => {
+    async function createTestBooking(
+      coachId: string,
+      eventTypeId: string,
+      overrides: Partial<{ startAt: Date; status: BookingStatus }> = {},
+    ) {
+      const startAt = overrides.startAt ?? new Date();
+      return testPrisma.booking.create({
+        data: {
+          coachId,
+          eventTypeId,
+          startAt,
+          endAt: new Date(startAt.getTime() + 30 * 60_000),
+          location: LocationType.PHONE,
+          clientName: 'Test Client',
+          clientEmail: 'client@example.com',
+          clientPhone: '+36301234567',
+          manageToken: `token-${startAt.getTime()}-${Math.random()}`,
+          status: overrides.status ?? BookingStatus.CONFIRMED,
+        },
+      });
+    }
+
+    it('counts confirmed bookings and sums priced event types, excluding null-priced ones', async () => {
+      const coach = await createTestCoach();
+      const paid = await createTestEventType(coach.id, { price: 15000 });
+      const free = await createTestEventType(coach.id, { price: 0 });
+      const noPriceShown = await createTestEventType(coach.id, {
+        price: null,
+      });
+      await createTestBooking(coach.id, paid.id);
+      await createTestBooking(coach.id, free.id);
+      await createTestBooking(coach.id, noPriceShown.id);
+
+      const stats = await service.getStats(coach.id, 'all');
+
+      expect(stats.bookingCount).toBe(3);
+      expect(stats.revenueHuf).toBe(15000);
+    });
+
+    it('excludes cancelled bookings from both the count and the revenue sum', async () => {
+      const coach = await createTestCoach();
+      const eventType = await createTestEventType(coach.id, { price: 10000 });
+      await createTestBooking(coach.id, eventType.id, {
+        status: BookingStatus.CANCELLED,
+      });
+
+      const stats = await service.getStats(coach.id, 'all');
+
+      expect(stats.bookingCount).toBe(0);
+      expect(stats.revenueHuf).toBe(0);
+    });
+
+    it('only counts bookings within the requested range', async () => {
+      const coach = await createTestCoach();
+      const eventType = await createTestEventType(coach.id, { price: 5000 });
+      const now = new Date();
+      const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+      await createTestBooking(coach.id, eventType.id, { startAt: now });
+      await createTestBooking(coach.id, eventType.id, {
+        startAt: tenDaysAgo,
+      });
+
+      const last7Days = await service.getStats(coach.id, '7d');
+      expect(last7Days.bookingCount).toBe(1);
+      expect(last7Days.revenueHuf).toBe(5000);
+
+      const allTime = await service.getStats(coach.id, 'all');
+      expect(allTime.bookingCount).toBe(2);
+      expect(allTime.revenueHuf).toBe(10000);
+    });
+
+    it("never counts a different coach's bookings", async () => {
+      const coach = await createTestCoach();
+      const otherCoach = await createTestCoach();
+      const otherEventType = await createTestEventType(otherCoach.id, {
+        price: 99999,
+      });
+      await createTestBooking(otherCoach.id, otherEventType.id);
+
+      const stats = await service.getStats(coach.id, 'all');
+
+      expect(stats.bookingCount).toBe(0);
+      expect(stats.revenueHuf).toBe(0);
+    });
+
+    it('defaults to the 30d range when none is given', async () => {
+      const coach = await createTestCoach();
+      const eventType = await createTestEventType(coach.id, { price: 1000 });
+      await createTestBooking(coach.id, eventType.id);
+
+      const stats = await service.getStats(coach.id);
+
+      expect(stats.range).toBe('30d');
+      expect(stats.bookingCount).toBe(1);
     });
   });
 });
