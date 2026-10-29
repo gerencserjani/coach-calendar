@@ -1,3 +1,9 @@
+# [1.28.0](https://github.com/gerencserjani/coach-calendar/compare/v1.27.0...v1.28.0) (2026-10-29)
+
+### Features
+
+- **coaches:** include email-sending mode in admin list ([f0182f7](https://github.com/gerencserjani/coach-calendar/commit/f0182f7aaeba1c9fbe53703861085b33d8b70c6f)), closes [#9](https://github.com/gerencserjani/coach-calendar/issues/9)
+
 # [1.27.0](https://github.com/gerencserjani/coach-calendar/compare/v1.26.0...v1.27.0) (2026-10-29)
 
 ### Features
