@@ -36,6 +36,14 @@ export class CoachesController {
   }
 
   @ApiBearerAuth()
+  @Get('pending-invites')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(CoachRole.ADMIN)
+  findPendingInvites() {
+    return this.coachesService.findPendingInvites();
+  }
+
+  @ApiBearerAuth()
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentCoach() coach: Coach) {

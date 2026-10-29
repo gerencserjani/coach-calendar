@@ -67,6 +67,15 @@ describe('CoachesService (integration)', () => {
         where: { email: 'new@example.com' },
       });
       expect(coach).toBeNull();
+
+      const log = await testPrisma.coachInviteLog.findFirst({
+        where: { email: 'new@example.com' },
+      });
+      expect(log).toMatchObject({
+        email: 'new@example.com',
+        name: 'New Coach',
+        frontendUrl: origin.origin,
+      });
     });
 
     it('rejects inviting an email that already belongs to a coach', async () => {
@@ -106,6 +115,62 @@ describe('CoachesService (integration)', () => {
         }),
       ).rejects.toThrow(NotFoundException);
       expect(sendInvite).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findPendingInvites', () => {
+    it('lists an invite that has not been accepted yet', async () => {
+      const origin = await createTestAllowedOrigin();
+      await service.invite({
+        email: 'pending@example.com',
+        name: 'Pending Coach',
+        frontendUrl: origin.origin,
+      });
+
+      const pending = await service.findPendingInvites();
+
+      expect(pending).toMatchObject([
+        {
+          email: 'pending@example.com',
+          name: 'Pending Coach',
+          frontendUrl: origin.origin,
+        },
+      ]);
+    });
+
+    it('excludes an invite once a Coach exists for that email', async () => {
+      const origin = await createTestAllowedOrigin();
+      await service.invite({
+        email: 'accepted@example.com',
+        name: 'Accepted Coach',
+        frontendUrl: origin.origin,
+      });
+      await createTestCoach({ email: 'accepted@example.com' });
+
+      const pending = await service.findPendingInvites();
+
+      expect(
+        pending.find((p) => p.email === 'accepted@example.com'),
+      ).toBeUndefined();
+    });
+
+    it('collapses a resent invite to a single entry with the latest sentAt', async () => {
+      const origin = await createTestAllowedOrigin();
+      await service.invite({
+        email: 'resent@example.com',
+        name: 'Resent Coach',
+        frontendUrl: origin.origin,
+      });
+      await service.invite({
+        email: 'resent@example.com',
+        name: 'Resent Coach',
+        frontendUrl: origin.origin,
+      });
+
+      const pending = await service.findPendingInvites();
+      const matches = pending.filter((p) => p.email === 'resent@example.com');
+
+      expect(matches).toHaveLength(1);
     });
   });
 

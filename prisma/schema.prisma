@@ -206,6 +206,26 @@ model GoogleIntegration {
   updatedAt             DateTime @updatedAt
 }
 
+/// Append-only, informational record of every invite CoachesService.invite()
+/// sends -- never read for auth purposes, deliberately has no password
+/// field and no relation that could be confused with a real account (see
+/// ADR-0001 and #63, which rejected a half-formed, login-adjacent Coach
+/// precursor, not persistence in general). A row here isn't "the invite is
+/// still pending" by itself -- pending-ness is computed at read time by
+/// checking no Coach row exists yet for this email (CoachesService's admin
+/// listing), not stored as a flag. Resending the same invite (calling
+/// invite() again) just adds another row; nothing here is ever updated or
+/// deleted.
+model CoachInviteLog {
+  id          String   @id @default(cuid())
+  email       String
+  name        String
+  frontendUrl String
+  sentAt      DateTime @default(now())
+
+  @@index([email])
+}
+
 /// Browser origins allowed through CORS (see main.ts's enableCors). Global,
 /// not per-coach: this covers every coach's own frontend domain plus
 /// non-coach tools (e.g. the admin tool, when hosted somewhere other than

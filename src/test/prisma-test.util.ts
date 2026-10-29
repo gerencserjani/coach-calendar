@@ -19,6 +19,7 @@ export async function resetDatabase(): Promise<void> {
   await testPrisma.coach.deleteMany();
   await testPrisma.settings.deleteMany();
   await testPrisma.googleIntegration.deleteMany();
+  await testPrisma.coachInviteLog.deleteMany();
   await testPrisma.allowedOrigin.deleteMany();
 }
 
