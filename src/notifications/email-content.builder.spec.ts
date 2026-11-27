@@ -13,6 +13,7 @@ function baseContext(
     eventTypeTitle: 'Kezdő konzultáció',
     price: null,
     clientName: 'Teszt Elek',
+    clientEmail: 'teszt.elek@example.com',
     coachName: 'Gerencsér Bernadett',
     startAt: new Date('2026-09-21T07:00:00.000Z'),
     endAt: new Date('2026-09-21T07:30:00.000Z'),
@@ -87,6 +88,22 @@ describe('EmailContentBuilder', () => {
       expect(props.secondaryButton?.url).toContain('calendar.google.com');
     });
 
+    it("includes the client's contact details for the coach, so they can reach out without opening the admin dashboard", () => {
+      const { props } = builder.buildConfirmed(baseContext(), 'coach', 'hu');
+      expect(props.details.slice(0, 3)).toEqual([
+        { label: 'Ügyfél', value: 'Teszt Elek' },
+        { label: 'Ügyfél e-mail címe', value: 'teszt.elek@example.com' },
+        { label: 'Ügyfél telefonszáma', value: '+36301234567' },
+      ]);
+    });
+
+    it("never shows the client's own contact details back to the client", () => {
+      const { props } = builder.buildConfirmed(baseContext(), 'client', 'hu');
+      expect(
+        props.details.find((d) => d.label === 'Ügyfél e-mail címe'),
+      ).toBeUndefined();
+    });
+
     it('renders in English when locale=en', () => {
       const { props } = builder.buildConfirmed(baseContext(), 'client', 'en');
       expect(props.heading).toBe('Your booking is confirmed');
@@ -153,6 +170,17 @@ describe('EmailContentBuilder', () => {
         label: 'Indoklás',
         value: 'közbejött valami',
       });
+    });
+
+    it("includes the client's contact details for the coach here too", () => {
+      const { props } = builder.buildCancelled(
+        baseContext({ cancelledBy: CancelledBy.CLIENT }),
+        'coach',
+        'hu',
+      );
+      expect(
+        props.details.find((d) => d.label === 'Ügyfél e-mail címe')?.value,
+      ).toBe('teszt.elek@example.com');
     });
 
     it('omits the note when there is no reason', () => {

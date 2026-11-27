@@ -8,6 +8,8 @@
   "email.common.labelPrice": "Ár",
   "email.common.free": "Díjmentes",
   "email.common.labelClient": "Ügyfél",
+  "email.common.labelClientEmail": "Ügyfél e-mail címe",
+  "email.common.labelClientPhone": "Ügyfél telefonszáma",
   "email.common.minutes": "{{count}} perc",
   "email.common.locationInPerson": "Személyes találkozó – {{address}}",
   "email.common.locationGoogleMeet": "Google Meet",

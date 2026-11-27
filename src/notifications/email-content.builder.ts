@@ -16,6 +16,7 @@ export interface BookingEmailContext {
    * see formatPriceHuf (price-format.util.ts). */
   price: number | null;
   clientName: string;
+  clientEmail: string;
   coachName: string;
   startAt: Date;
   endAt: Date;
@@ -109,7 +110,7 @@ export class EmailContentBuilder {
           { clientName: ctx.clientName },
         ),
         detailsHeading: t('email.common.detailsHeading'),
-        details,
+        details: [...this.buildClientContactDetails(ctx, locale), ...details],
         note,
         footer: t('email.common.footer'),
       },
@@ -202,7 +203,7 @@ export class EmailContentBuilder {
         heading: t(`email.${kind}.coach.heading`),
         intro: t(`email.${kind}.coach.intro`, vars),
         detailsHeading: t('email.common.detailsHeading'),
-        details,
+        details: [...this.buildClientContactDetails(ctx, locale), ...details],
         primaryButton: meetButton,
         secondaryButton: calendarButton,
         calendarNote,
@@ -224,6 +225,24 @@ export class EmailContentBuilder {
         label: t('email.common.linkRescheduleBooking'),
         url: `${ctx.manageUrl}&action=reschedule#idopontfoglalas`,
       },
+    ];
+  }
+
+  /**
+   * Coach-only rows prepended to the event details card -- the client's own
+   * name/email/phone, so a coach can reach out directly from the email
+   * (call, WhatsApp, reply) without first opening the admin dashboard to
+   * look the client up. Never shown to the client themselves: they already
+   * know their own contact details, and the whole point is the coach's
+   * side of the email, not the client's.
+   */
+  private buildClientContactDetails(ctx: BookingEmailContext, locale: string) {
+    const t = (key: string, vars?: Record<string, string | number>) =>
+      this.i18n.t(key, locale, vars);
+    return [
+      { label: t('email.common.labelClient'), value: ctx.clientName },
+      { label: t('email.common.labelClientEmail'), value: ctx.clientEmail },
+      { label: t('email.common.labelClientPhone'), value: ctx.clientPhone },
     ];
   }
 
