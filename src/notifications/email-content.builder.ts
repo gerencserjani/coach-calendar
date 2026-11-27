@@ -25,6 +25,7 @@ export interface BookingEmailContext {
   businessAddress: string;
   meetLink?: string;
   clientPhone: string;
+  clientNote?: string;
   timezone: string;
   logoUrl: string;
   /** This coach's public-facing business name -- see BookingEmailProps. */
@@ -84,7 +85,7 @@ export class EmailContentBuilder {
             { coachName: ctx.coachName },
           ),
           detailsHeading: t('email.common.detailsHeading'),
-          details,
+          details: [...this.buildClientContactDetails(ctx, locale), ...details],
           note,
           helperText: t('email.bookingCancelled.client.rebookHint'),
           footer: t('email.common.footer'),
@@ -181,7 +182,7 @@ export class EmailContentBuilder {
           heading: t(`email.${kind}.client.heading`),
           intro: t(`email.${kind}.client.intro`, vars),
           detailsHeading: t('email.common.detailsHeading'),
-          details,
+          details: [...this.buildClientContactDetails(ctx, locale), ...details],
           helperText: t(`email.${kind}.client.manageHint`),
           primaryButton: meetButton,
           secondaryButton: calendarButton,
@@ -229,12 +230,12 @@ export class EmailContentBuilder {
   }
 
   /**
-   * Coach-only rows prepended to the event details card -- the client's own
-   * name/email/phone, so a coach can reach out directly from the email
-   * (call, WhatsApp, reply) without first opening the admin dashboard to
-   * look the client up. Never shown to the client themselves: they already
-   * know their own contact details, and the whole point is the coach's
-   * side of the email, not the client's.
+   * Rows prepended to the event details card, shown to BOTH recipients --
+   * the client's own name/email/phone/note, exactly as submitted on the
+   * booking form. Lets a coach reach out directly from the email (call,
+   * WhatsApp, reply) without first opening the admin dashboard to look the
+   * client up, and lets the client double-check what they actually typed
+   * (easy to fat-finger a phone number or leave a typo in a note).
    */
   private buildClientContactDetails(ctx: BookingEmailContext, locale: string) {
     const t = (key: string, vars?: Record<string, string | number>) =>
@@ -243,6 +244,11 @@ export class EmailContentBuilder {
       { label: t('email.common.labelClient'), value: ctx.clientName },
       { label: t('email.common.labelClientEmail'), value: ctx.clientEmail },
       { label: t('email.common.labelClientPhone'), value: ctx.clientPhone },
+      // Omitted entirely when the client left no note -- an empty row would
+      // just read as noise.
+      ...(ctx.clientNote
+        ? [{ label: t('email.common.labelClientNote'), value: ctx.clientNote }]
+        : []),
     ];
   }
 

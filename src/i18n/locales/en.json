@@ -10,6 +10,7 @@
   "email.common.labelClient": "Client",
   "email.common.labelClientEmail": "Client email",
   "email.common.labelClientPhone": "Client phone",
+  "email.common.labelClientNote": "Note",
   "email.common.minutes": "{{count}} minutes",
   "email.common.locationInPerson": "In person – {{address}}",
   "email.common.locationGoogleMeet": "Google Meet",

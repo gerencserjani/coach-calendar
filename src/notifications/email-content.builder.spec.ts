@@ -60,7 +60,9 @@ describe('EmailContentBuilder', () => {
         },
       ]);
       expect(props.secondaryButton?.url).toContain('calendar.google.com');
-      expect(props.details).toHaveLength(4);
+      // 3 client-contact rows (name/email/phone, no note in the base
+      // fixture) + 4 event-detail rows (type/time/duration/location).
+      expect(props.details).toHaveLength(7);
     });
 
     it("passes the coach's brand name, tagline, and palette through unchanged", () => {
@@ -88,7 +90,7 @@ describe('EmailContentBuilder', () => {
       expect(props.secondaryButton?.url).toContain('calendar.google.com');
     });
 
-    it("includes the client's contact details for the coach, so they can reach out without opening the admin dashboard", () => {
+    it("includes the client's own contact details for the coach, so they can reach out without opening the admin dashboard", () => {
       const { props } = builder.buildConfirmed(baseContext(), 'coach', 'hu');
       expect(props.details.slice(0, 3)).toEqual([
         { label: 'Ügyfél', value: 'Teszt Elek' },
@@ -97,10 +99,28 @@ describe('EmailContentBuilder', () => {
       ]);
     });
 
-    it("never shows the client's own contact details back to the client", () => {
+    it('also shows the client their own submitted details, so they can double-check what they typed', () => {
       const { props } = builder.buildConfirmed(baseContext(), 'client', 'hu');
+      expect(props.details.slice(0, 3)).toEqual([
+        { label: 'Ügyfél', value: 'Teszt Elek' },
+        { label: 'Ügyfél e-mail címe', value: 'teszt.elek@example.com' },
+        { label: 'Ügyfél telefonszáma', value: '+36301234567' },
+      ]);
+    });
+
+    it('includes the note for both recipients when the client left one, and omits the row entirely otherwise', () => {
+      const withNote = builder.buildConfirmed(
+        baseContext({ clientNote: 'Kérem, hívjon előtte.' }),
+        'client',
+        'hu',
+      );
       expect(
-        props.details.find((d) => d.label === 'Ügyfél e-mail címe'),
+        withNote.props.details.find((d) => d.label === 'Megjegyzés')?.value,
+      ).toBe('Kérem, hívjon előtte.');
+
+      const withoutNote = builder.buildConfirmed(baseContext(), 'coach', 'hu');
+      expect(
+        withoutNote.props.details.find((d) => d.label === 'Megjegyzés'),
       ).toBeUndefined();
     });
 

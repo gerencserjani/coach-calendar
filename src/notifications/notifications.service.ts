@@ -137,6 +137,7 @@ export class NotificationsService {
       price: booking.eventType.price,
       clientName: booking.clientName,
       clientEmail: booking.clientEmail,
+      clientNote: booking.clientNote ?? undefined,
       coachName: booking.coach.name,
       startAt: booking.startAt,
       endAt: booking.endAt,
