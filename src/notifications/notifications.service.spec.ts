@@ -97,6 +97,13 @@ describe('NotificationsService (integration)', () => {
     return clientCall?.[0] as SendEmailInput;
   }
 
+  function coachEmailInput(): SendEmailInput {
+    const coachCall = emailService.send.mock.calls.find(
+      ([input]) => (input as SendEmailInput).to === coach.email,
+    );
+    return coachCall?.[0] as SendEmailInput;
+  }
+
   function clientCalendarUrlLocation(): string | null {
     return new URL(
       clientEmailInput().props.secondaryButton!.url,
@@ -156,6 +163,19 @@ describe('NotificationsService (integration)', () => {
       service.notifyBookingConfirmed(booking),
     ).resolves.toBeUndefined();
     expect(clientEmailInput().props.logoUrl).toBe('/email-logo.png');
+  });
+
+  it("includes the client's email and phone in the coach's own email, so they can reach out without opening the admin dashboard", async () => {
+    const booking = await createBooking(LocationType.PHONE);
+    await service.notifyBookingConfirmed(booking);
+
+    const { details } = coachEmailInput().props;
+    expect(details.find((d) => d.label === 'Ügyfél e-mail címe')?.value).toBe(
+      'client@example.com',
+    );
+    expect(details.find((d) => d.label === 'Ügyfél telefonszáma')?.value).toBe(
+      '+36301234567',
+    );
   });
 
   describe('price in the email details', () => {

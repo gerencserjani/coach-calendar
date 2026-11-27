@@ -16,6 +16,7 @@ export interface BookingEmailContext {
    * see formatPriceHuf (price-format.util.ts). */
   price: number | null;
   clientName: string;
+  clientEmail: string;
   coachName: string;
   startAt: Date;
   endAt: Date;
@@ -24,6 +25,7 @@ export interface BookingEmailContext {
   businessAddress: string;
   meetLink?: string;
   clientPhone: string;
+  clientNote?: string;
   timezone: string;
   logoUrl: string;
   /** This coach's public-facing business name -- see BookingEmailProps. */
@@ -83,7 +85,7 @@ export class EmailContentBuilder {
             { coachName: ctx.coachName },
           ),
           detailsHeading: t('email.common.detailsHeading'),
-          details,
+          details: [...this.buildClientContactDetails(ctx, locale), ...details],
           note,
           helperText: t('email.bookingCancelled.client.rebookHint'),
           footer: t('email.common.footer'),
@@ -109,7 +111,7 @@ export class EmailContentBuilder {
           { clientName: ctx.clientName },
         ),
         detailsHeading: t('email.common.detailsHeading'),
-        details,
+        details: [...this.buildClientContactDetails(ctx, locale), ...details],
         note,
         footer: t('email.common.footer'),
       },
@@ -180,7 +182,7 @@ export class EmailContentBuilder {
           heading: t(`email.${kind}.client.heading`),
           intro: t(`email.${kind}.client.intro`, vars),
           detailsHeading: t('email.common.detailsHeading'),
-          details,
+          details: [...this.buildClientContactDetails(ctx, locale), ...details],
           helperText: t(`email.${kind}.client.manageHint`),
           primaryButton: meetButton,
           secondaryButton: calendarButton,
@@ -202,7 +204,7 @@ export class EmailContentBuilder {
         heading: t(`email.${kind}.coach.heading`),
         intro: t(`email.${kind}.coach.intro`, vars),
         detailsHeading: t('email.common.detailsHeading'),
-        details,
+        details: [...this.buildClientContactDetails(ctx, locale), ...details],
         primaryButton: meetButton,
         secondaryButton: calendarButton,
         calendarNote,
@@ -224,6 +226,29 @@ export class EmailContentBuilder {
         label: t('email.common.linkRescheduleBooking'),
         url: `${ctx.manageUrl}&action=reschedule#idopontfoglalas`,
       },
+    ];
+  }
+
+  /**
+   * Rows prepended to the event details card, shown to BOTH recipients --
+   * the client's own name/email/phone/note, exactly as submitted on the
+   * booking form. Lets a coach reach out directly from the email (call,
+   * WhatsApp, reply) without first opening the admin dashboard to look the
+   * client up, and lets the client double-check what they actually typed
+   * (easy to fat-finger a phone number or leave a typo in a note).
+   */
+  private buildClientContactDetails(ctx: BookingEmailContext, locale: string) {
+    const t = (key: string, vars?: Record<string, string | number>) =>
+      this.i18n.t(key, locale, vars);
+    return [
+      { label: t('email.common.labelClient'), value: ctx.clientName },
+      { label: t('email.common.labelClientEmail'), value: ctx.clientEmail },
+      { label: t('email.common.labelClientPhone'), value: ctx.clientPhone },
+      // Omitted entirely when the client left no note -- an empty row would
+      // just read as noise.
+      ...(ctx.clientNote
+        ? [{ label: t('email.common.labelClientNote'), value: ctx.clientNote }]
+        : []),
     ];
   }
 
