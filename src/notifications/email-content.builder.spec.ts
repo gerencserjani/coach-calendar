@@ -93,18 +93,18 @@ describe('EmailContentBuilder', () => {
     it("includes the client's own contact details for the coach, so they can reach out without opening the admin dashboard", () => {
       const { props } = builder.buildConfirmed(baseContext(), 'coach', 'hu');
       expect(props.details.slice(0, 3)).toEqual([
-        { label: 'Ügyfél', value: 'Teszt Elek' },
-        { label: 'Ügyfél e-mail címe', value: 'teszt.elek@example.com' },
-        { label: 'Ügyfél telefonszáma', value: '+36301234567' },
+        { label: 'Név', value: 'Teszt Elek' },
+        { label: 'E-mail cím', value: 'teszt.elek@example.com' },
+        { label: 'Telefonszám', value: '+36301234567' },
       ]);
     });
 
     it('also shows the client their own submitted details, so they can double-check what they typed', () => {
       const { props } = builder.buildConfirmed(baseContext(), 'client', 'hu');
       expect(props.details.slice(0, 3)).toEqual([
-        { label: 'Ügyfél', value: 'Teszt Elek' },
-        { label: 'Ügyfél e-mail címe', value: 'teszt.elek@example.com' },
-        { label: 'Ügyfél telefonszáma', value: '+36301234567' },
+        { label: 'Név', value: 'Teszt Elek' },
+        { label: 'E-mail cím', value: 'teszt.elek@example.com' },
+        { label: 'Telefonszám', value: '+36301234567' },
       ]);
     });
 
@@ -198,9 +198,9 @@ describe('EmailContentBuilder', () => {
         'coach',
         'hu',
       );
-      expect(
-        props.details.find((d) => d.label === 'Ügyfél e-mail címe')?.value,
-      ).toBe('teszt.elek@example.com');
+      expect(props.details.find((d) => d.label === 'E-mail cím')?.value).toBe(
+        'teszt.elek@example.com',
+      );
     });
 
     it('omits the note when there is no reason', () => {

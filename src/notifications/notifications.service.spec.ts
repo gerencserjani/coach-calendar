@@ -170,10 +170,10 @@ describe('NotificationsService (integration)', () => {
     await service.notifyBookingConfirmed(booking);
 
     const { details } = coachEmailInput().props;
-    expect(details.find((d) => d.label === 'Ügyfél e-mail címe')?.value).toBe(
+    expect(details.find((d) => d.label === 'E-mail cím')?.value).toBe(
       'client@example.com',
     );
-    expect(details.find((d) => d.label === 'Ügyfél telefonszáma')?.value).toBe(
+    expect(details.find((d) => d.label === 'Telefonszám')?.value).toBe(
       '+36301234567',
     );
   });
